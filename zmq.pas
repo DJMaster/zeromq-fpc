@@ -407,9 +407,9 @@ const
   ZMQ_QUEUE = 3 deprecated;
 
 (*  Deprecated methods *)
-function zmq_device(type_: cint; frontend: pointer; backend: pointer): cint; cdecl; external LIB_ZMQ;
-function zmq_sendmsg(s: pointer; msg: Pzmq_msg_t; flags: cint): cint; cdecl; external LIB_ZMQ;
-function zmq_recvmsg(s: pointer; msg: Pzmq_msg_t; flags: cint): cint; cdecl; external LIB_ZMQ;
+function zmq_device(type_: cint; frontend: pointer; backend: pointer): cint; cdecl; external LIB_ZMQ; deprecated;
+function zmq_sendmsg(s: pointer; msg: Pzmq_msg_t; flags: cint): cint; cdecl; external LIB_ZMQ; deprecated;
+function zmq_recvmsg(s: pointer; msg: Pzmq_msg_t; flags: cint): cint; cdecl; external LIB_ZMQ; deprecated;
 
 
 (******************************************************************************)
