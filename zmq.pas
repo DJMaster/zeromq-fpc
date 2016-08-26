@@ -50,7 +50,7 @@ const
 (*  Version macros for compile-time API version detection                     *)
   ZMQ_VERSION_MAJOR = 4;
   ZMQ_VERSION_MINOR = 1;
-  ZMQ_VERSION_PATCH = 4;
+  ZMQ_VERSION_PATCH = 5;
 
 //TODO #define ZMQ_MAKE_VERSION(major, minor, patch) \
 //TODO     ((major) * 10000 + (minor) * 100 + (patch))
@@ -95,6 +95,16 @@ const
 //TODO #define ZMQ_DEFINED_STDINT 1
 //TODO #if defined ZMQ_HAVE_SOLARIS || defined ZMQ_HAVE_OPENVMS
 //TODO #   include <inttypes.h>
+//TODO #elif defined _MSC_VER && _MSC_VER < 1600
+//TODO #   ifndef int32_t
+//TODO         typedef __int32 int32_t;
+//TODO #   endif
+//TODO #   ifndef uint16_t
+//TODO         typedef unsigned __int16 uint16_t;
+//TODO #   endif
+//TODO #   ifndef uint8_t
+//TODO         typedef unsigned __int8 uint8_t;
+//TODO #   endif
 //TODO #else
 //TODO #   include <stdint.h>
 //TODO #endif
