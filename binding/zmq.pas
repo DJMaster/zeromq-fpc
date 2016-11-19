@@ -50,7 +50,7 @@ const
 (*  Version macros for compile-time API version detection                     *)
   ZMQ_VERSION_MAJOR = 4;
   ZMQ_VERSION_MINOR = 1;
-  ZMQ_VERSION_PATCH = 5;
+  ZMQ_VERSION_PATCH = 6;
 
 //TODO #define ZMQ_MAKE_VERSION(major, minor, patch) \
 //TODO     ((major) * 10000 + (minor) * 100 + (patch))
@@ -91,7 +91,7 @@ const
 // #   endif
 // #endif
 
-//TODO (*  Define integer types needed for event interface                          *)
+//TODO /*  Define integer types needed for event interface                          */
 //TODO #define ZMQ_DEFINED_STDINT 1
 //TODO #if defined ZMQ_HAVE_SOLARIS || defined ZMQ_HAVE_OPENVMS
 //TODO #   include <inttypes.h>
@@ -195,6 +195,10 @@ function zmq_ctx_destroy(context: pointer): cint; cdecl; external LIB_ZMQ;
 (******************************************************************************)
 
 type
+(* Some architectures, like sparc64 and some variants of aarch64, enforce pointer
+ * alignment and raise sigbus on violations. Make sure applications allocate
+ * zmq_msg_t on addresses aligned on a pointer-size boundary to avoid this issue.
+ *)
   Pzmq_msg_t = ^zmq_msg_t;
   zmq_msg_t = record
     _: array[0..63] of cuchar;
