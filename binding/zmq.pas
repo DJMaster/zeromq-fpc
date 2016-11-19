@@ -5,27 +5,37 @@
 //
 
 (*
-    Copyright (c) 2007-2015 Contributors as noted in the AUTHORS file
+    Copyright (c) 2007-2016 Contributors as noted in the AUTHORS file
 
-    This file is part of 0MQ.
+    This file is part of libzmq, the ZeroMQ core engine in C++.
 
-    0MQ is free software; you can redistribute it and/or modify it under
-    the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
+    libzmq is free software; you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License (LGPL) as published
+    by the Free Software Foundation; either version 3 of the License, or
     (at your option) any later version.
 
-    0MQ is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
+    As a special exception, the Contributors give you permission to link
+    this library with independent modules to produce an executable,
+    regardless of the license terms of these independent modules, and to
+    copy and distribute the resulting executable under terms of your choice,
+    provided that you also meet, for each linked independent module, the
+    terms and conditions of the license of that module. An independent
+    module is a module which is not derived from or based on this library.
+    If you modify this library, you must extend this exception to your
+    version of the library.
+
+    libzmq is distributed in the hope that it will be useful, but WITHOUT
+    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+    FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+    License for more details.
 
     You should have received a copy of the GNU Lesser General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
     *************************************************************************
     NOTE to contributors. This file comprises the principal public contract
-    for ZeroMQ API users (along with zmq_utils.h). Any change to this file
-    supplied in a stable release SHOULD not break existing applications.
+    for ZeroMQ API users. Any change to this file supplied in a stable
+    release SHOULD not break existing applications.
     In practice this means that the value of constants must not change, and
     that old values may not be reused for new constants.
     *************************************************************************
@@ -49,8 +59,8 @@ const
 const
 (*  Version macros for compile-time API version detection                     *)
   ZMQ_VERSION_MAJOR = 4;
-  ZMQ_VERSION_MINOR = 1;
-  ZMQ_VERSION_PATCH = 6;
+  ZMQ_VERSION_MINOR = 2;
+  ZMQ_VERSION_PATCH = 0;
 
 //TODO #define ZMQ_MAKE_VERSION(major, minor, patch) \
 //TODO     ((major) * 10000 + (minor) * 100 + (patch))
@@ -69,6 +79,20 @@ const
 // #include <stddef.h>
 // #include <stdio.h>
 // #if defined _WIN32
+// //  Set target version to Windows Server 2008, Windows Vista or higher.
+// //  Windows XP (0x0501) is supported but without client & server socket types.
+// #ifndef _WIN32_WINNT
+// #define _WIN32_WINNT 0x0600
+// #endif
+
+// #ifdef __MINGW32__
+// //  Require Windows XP or higher with MinGW for getaddrinfo().
+// #if(_WIN32_WINNT >= 0x0600)
+// #else
+// #undef _WIN32_WINNT
+// #define _WIN32_WINNT 0x0600
+// #endif
+// #endif
 // #include <winsock2.h>
 // #endif
 
@@ -171,6 +195,7 @@ const
   ZMQ_SOCKET_LIMIT = 3;
   ZMQ_THREAD_PRIORITY = 3;
   ZMQ_THREAD_SCHED_POLICY = 4;
+  ZMQ_MAX_MSGSZ = 5;
 
 (*  Default for new contexts                                                  *)
   ZMQ_IO_THREADS_DFLT = 1;
@@ -180,7 +205,7 @@ const
 
 function zmq_ctx_new(): pointer; cdecl; external LIB_ZMQ;
 function zmq_ctx_term(context: pointer): cint; cdecl; external LIB_ZMQ;
-function zmq_ctx_shutdown(context: pointer ): cint; cdecl; external LIB_ZMQ;
+function zmq_ctx_shutdown(context: pointer): cint; cdecl; external LIB_ZMQ;
 function zmq_ctx_set(context: pointer; option: cint; optval: cint): cint; cdecl; external LIB_ZMQ;
 function zmq_ctx_get(context: pointer; option: cint): cint; cdecl; external LIB_ZMQ;
 
@@ -188,7 +213,6 @@ function zmq_ctx_get(context: pointer; option: cint): cint; cdecl; external LIB_
 function zmq_init(io_threads: cint): pointer; cdecl; external LIB_ZMQ;
 function zmq_term(context: pointer): cint; cdecl; external LIB_ZMQ;
 function zmq_ctx_destroy(context: pointer): cint; cdecl; external LIB_ZMQ;
-
 
 (******************************************************************************)
 (*  0MQ message definition.                                                   *)
@@ -302,10 +326,29 @@ const
   ZMQ_HANDSHAKE_IVL = 66;
   ZMQ_SOCKS_PROXY = 68;
   ZMQ_XPUB_NODROP = 69;
+  ZMQ_BLOCKY = 70;
+  ZMQ_XPUB_MANUAL = 71;
+  ZMQ_XPUB_WELCOME_MSG = 72;
+  ZMQ_STREAM_NOTIFY = 73;
+  ZMQ_INVERT_MATCHING = 74;
+  ZMQ_HEARTBEAT_IVL = 75;
+  ZMQ_HEARTBEAT_TTL = 76;
+  ZMQ_HEARTBEAT_TIMEOUT = 77;
+  ZMQ_XPUB_VERBOSER = 78;
+  ZMQ_CONNECT_TIMEOUT = 79;
+  ZMQ_TCP_MAXRT = 80;
+  ZMQ_THREAD_SAFE = 81;
+  ZMQ_MULTICAST_MAXTPDU = 84;
+  ZMQ_VMCI_BUFFER_SIZE = 85;
+  ZMQ_VMCI_BUFFER_MIN_SIZE = 86;
+  ZMQ_VMCI_BUFFER_MAX_SIZE = 87;
+  ZMQ_VMCI_CONNECT_TIMEOUT = 88;
+  ZMQ_USE_FD = 89;
+//  All options after this is for version 4.3 and still *draft*
+//  Subject to arbitrary change without notice
 
 (*  Message options                                                           *)
   ZMQ_MORE = 1;
-  ZMQ_SRCFD = 2;
   ZMQ_SHARED = 3;
 
 (*  Send/recv options.                                                        *)
@@ -318,6 +361,9 @@ const
   ZMQ_CURVE = 2;
   ZMQ_GSSAPI = 3;
 
+(*  RADIO-DISH protocol                                                       *)
+  ZMQ_GROUP_MAX_LENGTH = 15;
+
 (*  Deprecated options and aliases                                            *)
   ZMQ_TCP_ACCEPT_FILTER       = 38 deprecated;
   ZMQ_IPC_FILTER_PID          = 58 deprecated;
@@ -329,11 +375,14 @@ const
   ZMQ_FAIL_UNROUTABLE         = ZMQ_ROUTER_MANDATORY deprecated;
   ZMQ_ROUTER_BEHAVIOR         = ZMQ_ROUTER_MANDATORY deprecated;
 
+(*  Deprecated Message options                                                *)
+  ZMQ_SRCFD = 2 deprecated;
+
 (******************************************************************************)
 (*  0MQ socket events and monitoring                                          *)
 (******************************************************************************)
 
-(*  Socket transport events (TCP and IPC only)                                *)
+(*  Socket transport events (TCP, IPC and TIPC only)                          *)
 
   ZMQ_EVENT_CONNECTED         = $0001;
   ZMQ_EVENT_CONNECT_DELAYED   = $0002;
@@ -369,6 +418,7 @@ const
   ZMQ_POLLIN = 1;
   ZMQ_POLLOUT = 2;
   ZMQ_POLLERR = 4;
+  ZMQ_POLLPRI = 8;
 
 type
   Pzmq_pollitem_t = ^zmq_pollitem_t;
@@ -415,6 +465,13 @@ function zmq_device(type_: cint; frontend: pointer; backend: pointer): cint; cde
 function zmq_sendmsg(s: pointer; msg: Pzmq_msg_t; flags: cint): cint; cdecl; external LIB_ZMQ; deprecated;
 function zmq_recvmsg(s: pointer; msg: Pzmq_msg_t; flags: cint): cint; cdecl; external LIB_ZMQ; deprecated;
 
+type
+  Piovec = ^iovec;
+  iovec = record
+  end;
+  
+function zmq_sendiov (s: pointer; iov: Piovec; count: csize_t; flags: cint): cint; cdecl; external LIB_ZMQ; deprecated;
+function zmq_recviov (s: pointer; iov: Piovec; count: pcsize_t; flags: cint): cint; cdecl; external LIB_ZMQ; deprecated;
 
 (******************************************************************************)
 (*  Encryption functions                                                      *)
@@ -426,9 +483,24 @@ function zmq_z85_encode(dest: pchar; const data: pcuint8; size: csize_t): pchar;
 (*  Decode data with Z85 encoding. Returns decoded data                       *)
 function zmq_z85_decode(dest: pcuint8; const string_: pchar): pcuint8; cdecl; external LIB_ZMQ;
 
-(*  Generate z85-encoded public and private keypair with libsodium.           *)
+(*  Generate z85-encoded public and private keypair with tweetnacl/libsodium. *)
 (*  Returns 0 on success.                                                     *)
 function zmq_curve_keypair(z85_public_key: pchar; z85_secret_key: pchar): cint; cdecl; external LIB_ZMQ;
+
+(*  Derive the z85-encoded public key from the z85-encoded secret key.        *)
+(*  Returns 0 on success.                                                     *)
+function zmq_curve_public (z85_public_key: pcchar; const z85_secret_key: pcchar): cint; cdecl; external LIB_ZMQ;
+
+(******************************************************************************)
+(*  Atomic utility methods                                                    *)
+(******************************************************************************)
+
+function zmq_atomic_counter_new(): pointer; cdecl; external LIB_ZMQ;
+procedure zmq_atomic_counter_set(counter: pointer; value: cint); cdecl; external LIB_ZMQ;
+function zmq_atomic_counter_inc(counter: pointer): cint; cdecl; external LIB_ZMQ;
+function zmq_atomic_counter_dec(counter: pointer): cint; cdecl; external LIB_ZMQ;
+function zmq_atomic_counter_value(counter: pointer): cint; cdecl; external LIB_ZMQ;
+procedure zmq_atomic_counter_destroy (counter_p: pointer); cdecl; external LIB_ZMQ;
 
 
 (******************************************************************************)
@@ -436,14 +508,6 @@ function zmq_curve_keypair(z85_public_key: pchar; z85_secret_key: pchar): cint; 
 (*  If you need these to be part of the formal ZMQ API, then (a) write a man  *)
 (*  page, and (b) write a test case in tests.                                 *)
 (******************************************************************************)
-
-type
-  Piovec = ^iovec;
-  iovec = record
-  end;
-
-function zmq_sendiov(s: pointer; iov: Piovec; count: csize_t; flags: cint): cint; cdecl; external LIB_ZMQ;
-function zmq_recviov(s: pointer; iov: Piovec; count: pcsize_t; flags: cint): cint; cdecl; external LIB_ZMQ;
 
 (*  Helper functions are used by perf tests so that they don't have to care   *)
 (*  about minutiae of time-related functions on different OS platforms.       *)
@@ -467,6 +531,91 @@ function zmq_threadstart(func: Pzmq_thread_fn; arg: pointer): pointer; cdecl; ex
 
 (* Wait for thread to complete then free up resources.                        *)
 procedure zmq_threadclose(thread: pointer); cdecl; external LIB_ZMQ;
+
+
+(******************************************************************************)
+(*  These functions are DRAFT and disabled in stable releases, and subject to *)
+(*  change at ANY time until declared stable.                                 *)
+(******************************************************************************)
+
+{$ifdef ZMQ_BUILD_DRAFT_API}
+
+const
+(*  DRAFT Socket types.                                                       *)
+  ZMQ_SERVER = 12;
+  ZMQ_CLIENT = 13;
+  ZMQ_RADIO = 14;
+  ZMQ_DISH = 15;
+  ZMQ_GATHER = 16;
+  ZMQ_SCATTER = 17;
+  ZMQ_DGRAM = 18;
+
+(*  DRAFT Socket methods.                                                     *)
+function zmq_join(s: pointer; const group: pcchar): cint; cdecl; external LIB_ZMQ;
+function zmq_leave(s: pointer; const group: pcchar): cint; cdecl; external LIB_ZMQ;
+
+(*  DRAFT Msg methods.                                                        *)
+function zmq_msg_set_routing_id(msg: Pzmq_msg_t; routing_id: cuint32): cint; cdecl; external LIB_ZMQ;
+function zmq_msg_routing_id(msg: Pzmq_msg_t): cuint32; cdecl; external LIB_ZMQ;
+function zmq_msg_set_group(msg: Pzmq_msg_t; const group: pcchar): cint; cdecl; external LIB_ZMQ;
+function zmq_msg_group(msg: Pzmq_msg_t): pcchar; cdecl; external LIB_ZMQ;
+
+(******************************************************************************)
+(*  Poller polling on sockets,fd and thread-safe sockets                      *)
+(******************************************************************************)
+
+{$define ZMQ_HAVE_POLLER}
+
+type
+  Pzmq_poller_event_t = ^zmq_poller_event_t;
+  zmq_poller_event_t = record
+    socket: pointer;
+{$ifdef MSWINDOWS}
+    fd: TSocket;
+{$else}
+    fd: cint;
+{$endif}
+    user_data: pointer;
+    events: cshort;
+  end;
+
+function zmq_poller_new(): pointer; cdecl; external LIB_ZMQ;
+function zmq_poller_destroy(poller_p: pointer): cint; cdecl; external LIB_ZMQ;
+function zmq_poller_add(poller: pointer; socket: pointer; user_data: pointer; events: cshort): cint; cdecl; external LIB_ZMQ;
+function zmq_poller_modify(poller: pointer; socket: pointer; events: cshort): cint; cdecl; external LIB_ZMQ;
+function zmq_poller_remove(poller: pointer; socket: pointer): cint; cdecl; external LIB_ZMQ;
+function zmq_poller_wait(poller: pointer; event: Pzmq_poller_event_t; timeout: clong): cint; cdecl; external LIB_ZMQ;
+function zmq_poller_wait_all(poller: pointer; events: Pzmq_poller_event_t; n_events: cint; timeout: clong): cint; cdecl; external LIB_ZMQ;
+
+{$ifdef MSWINDOWS}
+function zmq_poller_add_fd(poller: pointer; fd: TSocket; user_data: pointer; events: cshort): cint; cdecl; external LIB_ZMQ;
+function zmq_poller_modify_fd(poller: pointer; fd: TSocket; events: cshort): cint; cdecl; external LIB_ZMQ;
+function zmq_poller_remove_fd(poller: pointer; fd: TSocket): cint; cdecl; external LIB_ZMQ;
+{$else}
+function zmq_poller_add_fd(poller: pointer; fd: cint; user_data: pointer; events: short): cint; cdecl; external LIB_ZMQ;
+function zmq_poller_modify_fd(poller: pointer; fd: cint; events: cshort): cint; cdecl; external LIB_ZMQ;
+function zmq_poller_remove_fd(poller: pointer; fd: cint): cint; cdecl; external LIB_ZMQ;
+{$endif}
+
+(******************************************************************************)
+(*  Scheduling timers                                                         *)
+(******************************************************************************)
+
+{$define ZMQ_HAVE_TIMERS}
+
+type
+  zmq_timer_fn = procedure (timer_id: cint; arg: pointer); cdecl;
+
+function zmq_timers_new(): pointer; cdecl; external LIB_ZMQ;
+function zmq_timers_destroy (timers_p: pointer): cint; cdecl; external LIB_ZMQ;
+function zmq_timers_add (timers: pointer; interval: csize_t; handler: zmq_timer_fn; arg: pointer): cint; cdecl; external LIB_ZMQ;
+function zmq_timers_cancel (timers: pointer; timer_id: cint): cint; cdecl; external LIB_ZMQ;
+function zmq_timers_set_interval (timers: pointer; timer_id: cint; interval: csize_t): cint; cdecl; external LIB_ZMQ;
+function zmq_timers_reset (timers: pointer; timer_id: cint): cint; cdecl; external LIB_ZMQ;
+function zmq_timers_timeout (timers: pointer): clong; cdecl; external LIB_ZMQ;
+function zmq_timers_execute (timers: pointer): cint; cdecl; external LIB_ZMQ;
+
+{$endif} // ZMQ_BUILD_DRAFT_API
 
 
 // #undef ZMQ_EXPORT
