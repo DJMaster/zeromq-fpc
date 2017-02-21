@@ -60,7 +60,7 @@ const
 (*  Version macros for compile-time API version detection                     *)
   ZMQ_VERSION_MAJOR = 4;
   ZMQ_VERSION_MINOR = 2;
-  ZMQ_VERSION_PATCH = 1;
+  ZMQ_VERSION_PATCH = 2;
 
 //TODO #define ZMQ_MAKE_VERSION(major, minor, patch) \
 //TODO     ((major) * 10000 + (minor) * 100 + (patch))
