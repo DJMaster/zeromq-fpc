@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectSession>
+    <PathDelim Value="\"/>
+    <Version Value="9"/>
+    <BuildModes Active="Default"/>
+    <Units Count="5">
+      <Unit0>
+        <Filename Value="wuserver.pas"/>
+        <IsPartOfProject Value="True"/>
+        <IsVisibleTab Value="True"/>
+        <TopLine Value="5"/>
+        <CursorPos X="42" Y="21"/>
+        <UsageCount Value="20"/>
+        <Loaded Value="True"/>
+      </Unit0>
+      <Unit1>
+        <Filename Value="zmq.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="27"/>
+        <CursorPos X="56" Y="69"/>
+        <UsageCount Value="10"/>
+      </Unit1>
+      <Unit2>
+        <Filename Value="C:\lazarus\fpc\3.0.0\source\rtl\inc\ctypes.pp"/>
+        <EditorIndex Value="3"/>
+        <TopLine Value="61"/>
+        <CursorPos X="48" Y="81"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+      </Unit2>
+      <Unit3>
+        <Filename Value="..\binding\zmq.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="22"/>
+        <UsageCount Value="20"/>
+        <Loaded Value="True"/>
+      </Unit3>
+      <Unit4>
+        <Filename Value="..\binding\zmq_utils.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="1"/>
+        <CursorPos X="25" Y="10"/>
+        <UsageCount Value="20"/>
+        <Loaded Value="True"/>
+      </Unit4>
+    </Units>
+    <JumpHistory Count="10" HistoryIndex="9">
+      <Position1>
+        <Filename Value="wuserver.pas"/>
+        <Caret Line="10" Column="16"/>
+      </Position1>
+      <Position2>
+        <Filename Value="wuserver.pas"/>
+        <Caret Line="26" Column="54"/>
+      </Position2>
+      <Position3>
+        <Filename Value="wuserver.pas"/>
+        <Caret Line="37" Column="46"/>
+      </Position3>
+      <Position4>
+        <Filename Value="wuserver.pas"/>
+        <Caret Line="41" Column="46" TopLine="2"/>
+      </Position4>
+      <Position5>
+        <Filename Value="wuserver.pas"/>
+        <Caret Line="23" Column="43" TopLine="2"/>
+      </Position5>
+      <Position6>
+        <Filename Value="wuserver.pas"/>
+        <Caret Line="41" Column="42" TopLine="6"/>
+      </Position6>
+      <Position7>
+        <Filename Value="wuserver.pas"/>
+        <Caret Line="25" Column="35" TopLine="7"/>
+      </Position7>
+      <Position8>
+        <Filename Value="wuserver.pas"/>
+        <Caret Line="28" Column="38"/>
+      </Position8>
+      <Position9>
+        <Filename Value="wuserver.pas"/>
+        <Caret Line="26" Column="17" TopLine="6"/>
+      </Position9>
+      <Position10>
+        <Filename Value="wuserver.pas"/>
+        <Caret Line="15" Column="27" TopLine="8"/>
+      </Position10>
+    </JumpHistory>
+  </ProjectSession>
+</CONFIG>
