@@ -48,10 +48,15 @@ unit zmq;
 interface
 
 uses
+
   ctypes{$ifdef MSWINDOWS}, winsock2{$endif};
 
 const
+{$ifdef MSWINDOWS}
   LIB_ZMQ = 'libzmq.dll';
+{$else}
+  LIB_ZMQ = 'libzmq.so';
+{$endif}
 
 // #ifndef __ZMQ_H_INCLUDED__
 // #define __ZMQ_H_INCLUDED__
