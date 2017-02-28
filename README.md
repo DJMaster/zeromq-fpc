@@ -14,8 +14,8 @@ https://github.com/zeromq/libzmq/releases/download/v4.2.2/zeromq-4.2.2.tar.gz
 
 after unpacking it:
 
-./configure
-make
-sudo make install
+./configure<p>
+make<p>
+sudo make install<p>
 
 should be what is needed to have libzmq.so available.
