@@ -48,7 +48,6 @@ unit zmq;
 interface
 
 uses
-
   ctypes{$ifdef MSWINDOWS}, winsock2{$endif};
 
 const
@@ -64,13 +63,13 @@ const
 const
 (*  Version macros for compile-time API version detection                     *)
   ZMQ_VERSION_MAJOR = 4;
-  ZMQ_VERSION_MINOR = 2;
-  ZMQ_VERSION_PATCH = 2;
+  ZMQ_VERSION_MINOR = 3;
+  ZMQ_VERSION_PATCH = 1;
 
-//TODO #define ZMQ_MAKE_VERSION(major, minor, patch) \
-//TODO     ((major) * 10000 + (minor) * 100 + (patch))
-//TODO #define ZMQ_VERSION \
-//TODO     ZMQ_MAKE_VERSION(ZMQ_VERSION_MAJOR, ZMQ_VERSION_MINOR, ZMQ_VERSION_PATCH)
+//TODO #define ZMQ_MAKE_VERSION(major, minor, patch)                                  \
+//TODO     ((major) *10000 + (minor) *100 + (patch))
+//TODO #define ZMQ_VERSION                                                            \
+//TODO     ZMQ_MAKE_VERSION (ZMQ_VERSION_MAJOR, ZMQ_VERSION_MINOR, ZMQ_VERSION_PATCH)
 const
   ZMQ_VERSION_H = ZMQ_VERSION_MAJOR*10000 + ZMQ_VERSION_MINOR*100 + ZMQ_VERSION_PATCH;
 
@@ -92,10 +91,10 @@ const
 
 // #ifdef __MINGW32__
 // //  Require Windows XP or higher with MinGW for getaddrinfo().
-// #if(_WIN32_WINNT >= 0x0600)
+// #if (_WIN32_WINNT >= 0x0501)
 // #else
-// #undef _WIN32_WINNT
-// #define _WIN32_WINNT 0x0600
+// #error You need at least Windows XP target
+// 
 // #endif
 // #endif
 // #include <winsock2.h>
@@ -103,39 +102,42 @@ const
 
 // (*  Handle DSO symbol visibility                                             *)
 // #if defined _WIN32
-// #   if defined ZMQ_STATIC
-// #       define ZMQ_EXPORT
-// #   elif defined DLL_EXPORT
-// #       define ZMQ_EXPORT __declspec(dllexport)
-// #   else
-// #       define ZMQ_EXPORT __declspec(dllimport)
-// #   endif
+// #if defined ZMQ_STATIC
+// #define ZMQ_EXPORT
+// #elif defined DLL_EXPORT
+// #define ZMQ_EXPORT __declspec(dllexport)
 // #else
-// #   if defined __SUNPRO_C  || defined __SUNPRO_CC
-// #       define ZMQ_EXPORT __global
-// #   elif (defined __GNUC__ && __GNUC__ >= 4) || defined __INTEL_COMPILER
-// #       define ZMQ_EXPORT __attribute__ ((visibility("default")))
-// #   else
-// #       define ZMQ_EXPORT
-// #   endif
+// #define ZMQ_EXPORT __declspec(dllimport)
+// #endif
+// #else
+// #if defined __SUNPRO_C || defined __SUNPRO_CC
+// #define ZMQ_EXPORT __global
+// #elif (defined __GNUC__ && __GNUC__ >= 4) || defined __INTEL_COMPILER
+// #define ZMQ_EXPORT __attribute__ ((visibility ("default")))
+// #else
+// #define ZMQ_EXPORT
+// #endif
 // #endif
 
-//TODO /*  Define integer types needed for event interface                          */
+//TODO (*  Define integer types needed for event interface                          *)
 //TODO #define ZMQ_DEFINED_STDINT 1
 //TODO #if defined ZMQ_HAVE_SOLARIS || defined ZMQ_HAVE_OPENVMS
-//TODO #   include <inttypes.h>
+//TODO #include <inttypes.h>
 //TODO #elif defined _MSC_VER && _MSC_VER < 1600
-//TODO #   ifndef int32_t
-//TODO         typedef __int32 int32_t;
-//TODO #   endif
-//TODO #   ifndef uint16_t
-//TODO         typedef unsigned __int16 uint16_t;
-//TODO #   endif
-//TODO #   ifndef uint8_t
-//TODO         typedef unsigned __int8 uint8_t;
-//TODO #   endif
+//TODO #ifndef int32_t
+//TODO typedef __int32 int32_t;
+//TODO #endif
+//TODO #ifndef uint32_t
+//TODO typedef unsigned __int32 uint32_t;
+//TODO #endif
+//TODO #ifndef uint16_t
+//TODO typedef unsigned __int16 uint16_t;
+//TODO #endif
+//TODO #ifndef uint8_t
+//TODO typedef unsigned __int8 uint8_t;
+//TODO #endif
 //TODO #else
-//TODO #   include <stdint.h>
+//TODO #include <stdint.h>
 //TODO #endif
 
 // //  32-bit AIX's pollfd struct members are called reqevents and rtnevents so it
@@ -189,10 +191,10 @@ const
 function zmq_errno(): cint; cdecl; external LIB_ZMQ;
 
 (*  Resolves system errors and 0MQ errors to human-readable string.           *)
-function zmq_strerror(errnum: cint): pchar; cdecl; external LIB_ZMQ;
+function zmq_strerror(errnum_: cint): pchar; cdecl; external LIB_ZMQ;
 
 (*  Run-time API version detection                                            *)
-procedure zmq_version(major: pcint; minor: pcint; patch: pcint); cdecl; external LIB_ZMQ;
+procedure zmq_version(major_: pcint; minor_: pcint; patch_: pcint); cdecl; external LIB_ZMQ;
 
 (******************************************************************************)
 (*  0MQ infrastructure (a.k.a. context) initialisation & termination.         *)
@@ -207,6 +209,10 @@ const
   ZMQ_THREAD_PRIORITY = 3;
   ZMQ_THREAD_SCHED_POLICY = 4;
   ZMQ_MAX_MSGSZ = 5;
+  ZMQ_MSG_T_SIZE = 6;
+  ZMQ_THREAD_AFFINITY_CPU_ADD = 7;
+  ZMQ_THREAD_AFFINITY_CPU_REMOVE = 8;
+  ZMQ_THREAD_NAME_PREFIX = 9;
 
 (*  Default for new contexts                                                  *)
   ZMQ_IO_THREADS_DFLT = 1;
@@ -215,15 +221,15 @@ const
   ZMQ_THREAD_SCHED_POLICY_DFLT = -1;
 
 function zmq_ctx_new(): pointer; cdecl; external LIB_ZMQ;
-function zmq_ctx_term(context: pointer): cint; cdecl; external LIB_ZMQ;
-function zmq_ctx_shutdown(context: pointer): cint; cdecl; external LIB_ZMQ;
-function zmq_ctx_set(context: pointer; option: cint; optval: cint): cint; cdecl; external LIB_ZMQ;
-function zmq_ctx_get(context: pointer; option: cint): cint; cdecl; external LIB_ZMQ;
+function zmq_ctx_term(context_: pointer): cint; cdecl; external LIB_ZMQ;
+function zmq_ctx_shutdown(context_: pointer): cint; cdecl; external LIB_ZMQ;
+function zmq_ctx_set(context_: pointer; option_: cint; optval_: cint): cint; cdecl; external LIB_ZMQ;
+function zmq_ctx_get(context_: pointer; option_: cint): cint; cdecl; external LIB_ZMQ;
 
 (*  Old (legacy) API                                                          *)
-function zmq_init(io_threads: cint): pointer; cdecl; external LIB_ZMQ;
-function zmq_term(context: pointer): cint; cdecl; external LIB_ZMQ;
-function zmq_ctx_destroy(context: pointer): cint; cdecl; external LIB_ZMQ;
+function zmq_init(io_threads_: cint): pointer; cdecl; external LIB_ZMQ;
+function zmq_term(context_: pointer): cint; cdecl; external LIB_ZMQ;
+function zmq_ctx_destroy(context_: pointer): cint; cdecl; external LIB_ZMQ;
 
 (******************************************************************************)
 (*  0MQ message definition.                                                   *)
@@ -240,23 +246,22 @@ type
   end;
 
   Pzmq_free_fn = ^zmq_free_fn;
-  zmq_free_fn = procedure (data: pointer; hint: pointer); cdecl;
+  zmq_free_fn = procedure (data_: pointer; hint_: pointer); cdecl;
 
-function zmq_msg_init(msg: Pzmq_msg_t): cint; cdecl; external LIB_ZMQ;
-function zmq_msg_init_size(msg: Pzmq_msg_t; size: csize_t): cint; cdecl; external LIB_ZMQ;
-function zmq_msg_init_data(msg: Pzmq_msg_t; data: pointer; size: csize_t; ffn: Pzmq_free_fn; hint: pointer): cint; cdecl; external LIB_ZMQ;
-function zmq_msg_send(msg: Pzmq_msg_t; s: pointer; flags: cint): cint; cdecl; external LIB_ZMQ;
-function zmq_msg_recv(msg: Pzmq_msg_t; s: pointer; flags: cint): cint; cdecl; external LIB_ZMQ;
-function zmq_msg_close(msg: Pzmq_msg_t): cint; cdecl; external LIB_ZMQ;
-function zmq_msg_move(dest: Pzmq_msg_t; src: Pzmq_msg_t): cint; cdecl; external LIB_ZMQ;
-function zmq_msg_copy(dest: Pzmq_msg_t; src: Pzmq_msg_t): cint; cdecl; external LIB_ZMQ;
-function zmq_msg_data(msg: Pzmq_msg_t): pointer; cdecl; external LIB_ZMQ;
-FUNCTION zmq_msg_size(msg: Pzmq_msg_t): csize_t; cdecl; external LIB_ZMQ;
-function zmq_msg_more(msg: Pzmq_msg_t): cint; cdecl; external LIB_ZMQ;
-function zmq_msg_get(msg: Pzmq_msg_t; property_: cint): cint; cdecl; external LIB_ZMQ;
-function zmq_msg_set(msg: Pzmq_msg_t; property_: cint; optval: cint): cint; cdecl; external LIB_ZMQ;
-function zmq_msg_gets(msg: Pzmq_msg_t; const property_: pchar): pchar; cdecl; external LIB_ZMQ;
-
+function zmq_msg_init(msg_: Pzmq_msg_t): cint; cdecl; external LIB_ZMQ;
+function zmq_msg_init_size(msg_: Pzmq_msg_t; size_: csize_t): cint; cdecl; external LIB_ZMQ;
+function zmq_msg_init_data(msg_: Pzmq_msg_t; data_: pointer; size_: csize_t; ffn_: Pzmq_free_fn; hint_: pointer): cint; cdecl; external LIB_ZMQ;
+function zmq_msg_send(msg_: Pzmq_msg_t; s_: pointer; flags_: cint): cint; cdecl; external LIB_ZMQ;
+function zmq_msg_recv(msg_: Pzmq_msg_t; s_: pointer; flags_: cint): cint; cdecl; external LIB_ZMQ;
+function zmq_msg_close(msg_: Pzmq_msg_t): cint; cdecl; external LIB_ZMQ;
+function zmq_msg_move(dest_: Pzmq_msg_t; src_: Pzmq_msg_t): cint; cdecl; external LIB_ZMQ;
+function zmq_msg_copy(dest_: Pzmq_msg_t; src_: Pzmq_msg_t): cint; cdecl; external LIB_ZMQ;
+function zmq_msg_data(msg_: Pzmq_msg_t): pointer; cdecl; external LIB_ZMQ;
+FUNCTION zmq_msg_size(msg_: Pzmq_msg_t): csize_t; cdecl; external LIB_ZMQ;
+function zmq_msg_more(msg_: Pzmq_msg_t): cint; cdecl; external LIB_ZMQ;
+function zmq_msg_get(msg_: Pzmq_msg_t; property_: cint): cint; cdecl; external LIB_ZMQ;
+function zmq_msg_set(msg_: Pzmq_msg_t; property_: cint; optval_: cint): cint; cdecl; external LIB_ZMQ;
+function zmq_msg_gets(msg_: Pzmq_msg_t; const property_: pchar): pchar; cdecl; external LIB_ZMQ;
 
 (******************************************************************************)
 (*  0MQ socket definition.                                                    *)
@@ -283,7 +288,7 @@ const
 
 (*  Socket options.                                                           *)
   ZMQ_AFFINITY = 4;
-  ZMQ_IDENTITY = 5;
+  ZMQ_ROUTING_ID = 5;
   ZMQ_SUBSCRIBE = 6;
   ZMQ_UNSUBSCRIBE = 7;
   ZMQ_RATE = 8;
@@ -329,7 +334,7 @@ const
   ZMQ_ZAP_DOMAIN = 55;
   ZMQ_ROUTER_HANDOVER = 56;
   ZMQ_TOS = 57;
-  ZMQ_CONNECT_RID = 61;
+  ZMQ_CONNECT_ROUTING_ID = 61;
   ZMQ_GSSAPI_SERVER = 62;
   ZMQ_GSSAPI_PRINCIPAL = 63;
   ZMQ_GSSAPI_SERVICE_PRINCIPAL = 64;
@@ -355,6 +360,9 @@ const
   ZMQ_VMCI_BUFFER_MAX_SIZE = 87;
   ZMQ_VMCI_CONNECT_TIMEOUT = 88;
   ZMQ_USE_FD = 89;
+  ZMQ_GSSAPI_PRINCIPAL_NAMETYPE = 90;
+  ZMQ_GSSAPI_SERVICE_PRINCIPAL_NAMETYPE = 91;
+  ZMQ_BINDTODEVICE = 92;
 
 (*  Message options                                                           *)
   ZMQ_MORE = 1;
@@ -374,6 +382,8 @@ const
   ZMQ_GROUP_MAX_LENGTH = 15;
 
 (*  Deprecated options and aliases                                            *)
+  ZMQ_IDENTITY = ZMQ_ROUTING_ID deprecated;
+  ZMQ_CONNECT_RID = ZMQ_CONNECT_ROUTING_ID deprecated;
   ZMQ_TCP_ACCEPT_FILTER       = 38 deprecated;
   ZMQ_IPC_FILTER_PID          = 58 deprecated;
   ZMQ_IPC_FILTER_UID          = 59 deprecated;
@@ -386,6 +396,15 @@ const
 
 (*  Deprecated Message options                                                *)
   ZMQ_SRCFD = 2 deprecated;
+
+(******************************************************************************)
+(*  GSSAPI definitions                                                        *)
+(******************************************************************************)
+
+(*  GSSAPI principal name types                                               *)
+  ZMQ_GSSAPI_NT_HOSTBASED = 0;
+  ZMQ_GSSAPI_NT_USER_NAME = 1;
+  ZMQ_GSSAPI_NT_KRB5_PRINCIPAL = 2;
 
 (******************************************************************************)
 (*  0MQ socket events and monitoring                                          *)
@@ -405,23 +424,54 @@ const
   ZMQ_EVENT_DISCONNECTED      = $0200;
   ZMQ_EVENT_MONITOR_STOPPED   = $0400;
   ZMQ_EVENT_ALL               = $FFFF;
+(*  Unspecified system errors during handshake. Event value is an errno.      *)
+  ZMQ_EVENT_HANDSHAKE_FAILED_NO_DETAIL = $0800;
+(*  Handshake complete successfully with successful authentication (if        *
+ *  enabled). Event value is unused.                                          *)
+  ZMQ_EVENT_HANDSHAKE_SUCCEEDED = $1000;
+(*  Protocol errors between ZMTP peers or between server and ZAP handler.     *
+ *  Event value is one of ZMQ_PROTOCOL_ERROR_*                                *)
+  ZMQ_EVENT_HANDSHAKE_FAILED_PROTOCOL = $2000;
+(*  Failed authentication requests. Event value is the numeric ZAP status     *
+ *  code, i.e. 300, 400 or 500.                                               *)
+  ZMQ_EVENT_HANDSHAKE_FAILED_AUTH = $4000;
+  ZMQ_PROTOCOL_ERROR_ZMTP_UNSPECIFIED = $10000000;
+  ZMQ_PROTOCOL_ERROR_ZMTP_UNEXPECTED_COMMAND = $10000001;
+  ZMQ_PROTOCOL_ERROR_ZMTP_INVALID_SEQUENCE = $10000002;
+  ZMQ_PROTOCOL_ERROR_ZMTP_KEY_EXCHANGE = $10000003;
+  ZMQ_PROTOCOL_ERROR_ZMTP_MALFORMED_COMMAND_UNSPECIFIED = $10000011;
+  ZMQ_PROTOCOL_ERROR_ZMTP_MALFORMED_COMMAND_MESSAGE = $10000012;
+  ZMQ_PROTOCOL_ERROR_ZMTP_MALFORMED_COMMAND_HELLO = $10000013;
+  ZMQ_PROTOCOL_ERROR_ZMTP_MALFORMED_COMMAND_INITIATE = $10000014;
+  ZMQ_PROTOCOL_ERROR_ZMTP_MALFORMED_COMMAND_ERROR = $10000015;
+  ZMQ_PROTOCOL_ERROR_ZMTP_MALFORMED_COMMAND_READY = $10000016;
+  ZMQ_PROTOCOL_ERROR_ZMTP_MALFORMED_COMMAND_WELCOME = $10000017;
+  ZMQ_PROTOCOL_ERROR_ZMTP_INVALID_METADATA = $10000018;
+// the following two may be due to erroneous configuration of a peer
+  ZMQ_PROTOCOL_ERROR_ZMTP_CRYPTOGRAPHIC = $11000001;
+  ZMQ_PROTOCOL_ERROR_ZMTP_MECHANISM_MISMATCH = $11000002;
+  ZMQ_PROTOCOL_ERROR_ZAP_UNSPECIFIED = $20000000;
+  ZMQ_PROTOCOL_ERROR_ZAP_MALFORMED_REPLY = $20000001;
+  ZMQ_PROTOCOL_ERROR_ZAP_BAD_REQUEST_ID = $20000002;
+  ZMQ_PROTOCOL_ERROR_ZAP_BAD_VERSION = $20000003;
+  ZMQ_PROTOCOL_ERROR_ZAP_INVALID_STATUS_CODE = $20000004;
+  ZMQ_PROTOCOL_ERROR_ZAP_INVALID_METADATA = $20000005;
 
-function zmq_socket(context: pointer; type_: cint): pointer; cdecl; external LIB_ZMQ;
-function zmq_close(s: pointer): cint; cdecl; external LIB_ZMQ;
-function zmq_setsockopt(s: pointer; option: cint; const optval: pointer; optvallen: csize_t): cint; cdecl; external LIB_ZMQ;
-function zmq_getsockopt(s: pointer; option: cint; optval: pointer; optvallen: pcsize_t): cint; cdecl; external LIB_ZMQ;
-function zmq_bind(s: pointer; const addr: pchar): cint; cdecl; external LIB_ZMQ;
-function zmq_connect(s: pointer; const addr: pchar): cint; cdecl; external LIB_ZMQ;
-function zmq_unbind(s: pointer; const addr: pchar): cint; cdecl; external LIB_ZMQ;
-function zmq_disconnect(s: pointer; const addr: pchar): cint; cdecl; external LIB_ZMQ;
-function zmq_send(s: pointer; const buf: pointer; len: csize_t; flags: cint): cint; cdecl; external LIB_ZMQ;
-function zmq_send_const(s: pointer; const buf: pointer; len: csize_t; flags: cint): cint; cdecl; external LIB_ZMQ;
-function zmq_recv(s: pointer; buf: pointer; len: csize_t; flags: cint): cint; cdecl; external LIB_ZMQ;
-function zmq_socket_monitor(s: pointer; const addr: pchar; events: cint): cint; cdecl; external LIB_ZMQ;
-
+function zmq_socket(context_: pointer; type_: cint): pointer; cdecl; external LIB_ZMQ;
+function zmq_close(s_: pointer): cint; cdecl; external LIB_ZMQ;
+function zmq_setsockopt(s_: pointer; option_: cint; const optval_: pointer; optvallen_: csize_t): cint; cdecl; external LIB_ZMQ;
+function zmq_getsockopt(s_: pointer; option_: cint; optval_: pointer; optvallen_: pcsize_t): cint; cdecl; external LIB_ZMQ;
+function zmq_bind(s_: pointer; const addr_: pchar): cint; cdecl; external LIB_ZMQ;
+function zmq_connect(s_: pointer; const addr_: pchar): cint; cdecl; external LIB_ZMQ;
+function zmq_unbind(s_: pointer; const addr_: pchar): cint; cdecl; external LIB_ZMQ;
+function zmq_disconnect(s_: pointer; const addr_: pchar): cint; cdecl; external LIB_ZMQ;
+function zmq_send(s_: pointer; const buf_: pointer; len_: csize_t; flags_: cint): cint; cdecl; external LIB_ZMQ;
+function zmq_send_const(s_: pointer; const buf_: pointer; len_: csize_t; flags_: cint): cint; cdecl; external LIB_ZMQ;
+function zmq_recv(s_: pointer; buf_: pointer; len_: csize_t; flags_: cint): cint; cdecl; external LIB_ZMQ;
+function zmq_socket_monitor(s_: pointer; const addr_: pchar; events_: cint): cint; cdecl; external LIB_ZMQ;
 
 (******************************************************************************)
-(*  I/O multiplexing.                                                         *)
+(*  Deprecated I/O multiplexing. Prefer using zmq_poller API                  *)
 (******************************************************************************)
 const
   ZMQ_POLLIN = 1;
@@ -445,14 +495,14 @@ type
 const
   ZMQ_POLLITEMS_DFLT = 16;
 
-function zmq_poll(items: Pzmq_pollitem_t; nitems: cint; timeout: clong): cint; cdecl; external LIB_ZMQ;
+function zmq_poll(items_: Pzmq_pollitem_t; nitems_: cint; timeout_: clong): cint; cdecl; external LIB_ZMQ;
 
 (******************************************************************************)
 (*  Message proxying                                                          *)
 (******************************************************************************)
 
-function zmq_proxy(frontend: pointer; backend: pointer; capture: pointer): cint; cdecl; external LIB_ZMQ;
-function zmq_proxy_steerable(frontend: pointer; backend: pointer; capture: pointer; control: pointer): cint; cdecl; external LIB_ZMQ;
+function zmq_proxy(frontend_: pointer; backend_: pointer; capture_: pointer): cint; cdecl; external LIB_ZMQ;
+function zmq_proxy_steerable(frontend_: pointer; backend_: pointer; capture_: pointer; control_: pointer): cint; cdecl; external LIB_ZMQ;
 
 (******************************************************************************)
 (*  Probe library capabilities                                                *)
@@ -461,7 +511,7 @@ function zmq_proxy_steerable(frontend: pointer; backend: pointer; capture: point
 const
   ZMQ_HAS_CAPABILITIES = 1;
 
-function zmq_has(const capability: pchar): cint; cdecl; external LIB_ZMQ;
+function zmq_has(const capability_: pchar): cint; cdecl; external LIB_ZMQ;
 
 const
 (*  Deprecated aliases *)
@@ -470,47 +520,64 @@ const
   ZMQ_QUEUE = 3 deprecated;
 
 (*  Deprecated methods *)
-function zmq_device(type_: cint; frontend: pointer; backend: pointer): cint; cdecl; external LIB_ZMQ; deprecated;
-function zmq_sendmsg(s: pointer; msg: Pzmq_msg_t; flags: cint): cint; cdecl; external LIB_ZMQ; deprecated;
-function zmq_recvmsg(s: pointer; msg: Pzmq_msg_t; flags: cint): cint; cdecl; external LIB_ZMQ; deprecated;
+function zmq_device(type_: cint; frontend_: pointer; backend_: pointer): cint; cdecl; external LIB_ZMQ; deprecated;
+function zmq_sendmsg(s_: pointer; msg_: Pzmq_msg_t; flags_: cint): cint; cdecl; external LIB_ZMQ; deprecated;
+function zmq_recvmsg(s_: pointer; msg_: Pzmq_msg_t; flags_: cint): cint; cdecl; external LIB_ZMQ; deprecated;
 
 type
   Piovec = ^iovec;
   iovec = record
   end;
   
-function zmq_sendiov (s: pointer; iov: Piovec; count: csize_t; flags: cint): cint; cdecl; external LIB_ZMQ; deprecated;
-function zmq_recviov (s: pointer; iov: Piovec; count: pcsize_t; flags: cint): cint; cdecl; external LIB_ZMQ; deprecated;
+function zmq_sendiov (s_: pointer; iov_: Piovec; count_: csize_t; flags_: cint): cint; cdecl; external LIB_ZMQ; deprecated;
+function zmq_recviov (s_: pointer; iov_: Piovec; count_: pcsize_t; flags_: cint): cint; cdecl; external LIB_ZMQ; deprecated;
 
 (******************************************************************************)
 (*  Encryption functions                                                      *)
 (******************************************************************************)
 
 (*  Encode data with Z85 encoding. Returns encoded data                       *)
-function zmq_z85_encode(dest: pchar; const data: pcuint8; size: csize_t): pchar; cdecl; external LIB_ZMQ;
+function zmq_z85_encode(dest_: pchar; const data_: pcuint8; size_: csize_t): pchar; cdecl; external LIB_ZMQ;
 
 (*  Decode data with Z85 encoding. Returns decoded data                       *)
-function zmq_z85_decode(dest: pcuint8; const string_: pchar): pcuint8; cdecl; external LIB_ZMQ;
+function zmq_z85_decode(dest_: pcuint8; const string_: pchar): pcuint8; cdecl; external LIB_ZMQ;
 
 (*  Generate z85-encoded public and private keypair with tweetnacl/libsodium. *)
 (*  Returns 0 on success.                                                     *)
-function zmq_curve_keypair(z85_public_key: pchar; z85_secret_key: pchar): cint; cdecl; external LIB_ZMQ;
+function zmq_curve_keypair(z85_public_key_: pchar; z85_secret_key_: pchar): cint; cdecl; external LIB_ZMQ;
 
 (*  Derive the z85-encoded public key from the z85-encoded secret key.        *)
 (*  Returns 0 on success.                                                     *)
-function zmq_curve_public (z85_public_key: pcchar; const z85_secret_key: pcchar): cint; cdecl; external LIB_ZMQ;
+function zmq_curve_public (z85_public_key_: pcchar; const z85_secret_key_: pcchar): cint; cdecl; external LIB_ZMQ;
 
 (******************************************************************************)
 (*  Atomic utility methods                                                    *)
 (******************************************************************************)
 
 function zmq_atomic_counter_new(): pointer; cdecl; external LIB_ZMQ;
-procedure zmq_atomic_counter_set(counter: pointer; value: cint); cdecl; external LIB_ZMQ;
-function zmq_atomic_counter_inc(counter: pointer): cint; cdecl; external LIB_ZMQ;
-function zmq_atomic_counter_dec(counter: pointer): cint; cdecl; external LIB_ZMQ;
-function zmq_atomic_counter_value(counter: pointer): cint; cdecl; external LIB_ZMQ;
-procedure zmq_atomic_counter_destroy (counter_p: pointer); cdecl; external LIB_ZMQ;
+procedure zmq_atomic_counter_set(counter_: pointer; value_: cint); cdecl; external LIB_ZMQ;
+function zmq_atomic_counter_inc(counter_: pointer): cint; cdecl; external LIB_ZMQ;
+function zmq_atomic_counter_dec(counter_: pointer): cint; cdecl; external LIB_ZMQ;
+function zmq_atomic_counter_value(counter_: pointer): cint; cdecl; external LIB_ZMQ;
+procedure zmq_atomic_counter_destroy (counter_p_: pointer); cdecl; external LIB_ZMQ;
 
+(******************************************************************************)
+(*  Scheduling timers                                                         *)
+(******************************************************************************)
+
+{$define ZMQ_HAVE_TIMERS}
+
+type
+  zmq_timer_fn = procedure (timer_id: cint; arg: pointer); cdecl;
+
+function zmq_timers_new (): pointer; cdecl; external LIB_ZMQ;
+function zmq_timers_destroy (timers_p_: pointer): cint; cdecl; external LIB_ZMQ;
+function zmq_timers_add (timers_: pointer; interval_: csize_t; handler_: zmq_timer_fn; arg_: pointer): cint; cdecl; external LIB_ZMQ;
+function zmq_timers_cancel (timers_: pointer; timer_id_: cint): cint; cdecl; external LIB_ZMQ;
+function zmq_timers_set_interval (timers_: pointer; timer_id_: cint; interval_: csize_t): cint; cdecl; external LIB_ZMQ;
+function zmq_timers_reset (timers_: pointer; timer_id_: cint): cint; cdecl; external LIB_ZMQ;
+function zmq_timers_timeout (timers_: pointer): clong; cdecl; external LIB_ZMQ;
+function zmq_timers_execute (timers_: pointer): cint; cdecl; external LIB_ZMQ;
 
 (******************************************************************************)
 (*  These functions are not documented by man pages -- use at your own risk.  *)
@@ -524,8 +591,12 @@ procedure zmq_atomic_counter_destroy (counter_p: pointer); cdecl; external LIB_Z
 (*  Starts the stopwatch. Returns the handle to the watch.                    *)
 function zmq_stopwatch_start(): pointer; cdecl; external LIB_ZMQ;
 
+(*  Returns the number of microseconds elapsed since the stopwatch was        *)
+(*  started, but does not stop or deallocate the stopwatch.                   *)
+function zmq_stopwatch_intermediate(watch_: pointer): culong; cdecl; external LIB_ZMQ;
+
 (*  Stops the stopwatch. Returns the number of microseconds elapsed since     *)
-(*  the stopwatch was started.                                                *)
+(*  the stopwatch was started, and deallocates that watch.                    *)
 function zmq_stopwatch_stop(watch_: pointer): culong; cdecl; external LIB_ZMQ;
 
 (*  Sleeps for specified number of seconds.                                   *)
@@ -533,14 +604,13 @@ procedure zmq_sleep(seconds_: cint); cdecl; external LIB_ZMQ;
 
 type
   Pzmq_thread_fn = ^zmq_thread_fn;
-  zmq_thread_fn = procedure(data: pointer); cdecl;
+  zmq_thread_fn = procedure(data_: pointer); cdecl;
 
 (* Start a thread. Returns a handle to the thread.                            *)
-function zmq_threadstart(func: Pzmq_thread_fn; arg: pointer): pointer; cdecl; external LIB_ZMQ;
+function zmq_threadstart(func_: Pzmq_thread_fn; arg_: pointer): pointer; cdecl; external LIB_ZMQ;
 
 (* Wait for thread to complete then free up resources.                        *)
-procedure zmq_threadclose(thread: pointer); cdecl; external LIB_ZMQ;
-
+procedure zmq_threadclose(thread_: pointer); cdecl; external LIB_ZMQ;
 
 (******************************************************************************)
 (*  These functions are DRAFT and disabled in stable releases, and subject to *)
@@ -559,12 +629,15 @@ const
   ZMQ_SCATTER = 17;
   ZMQ_DGRAM = 18;
 
-(*  DRAFT 0MQ socket events and monitoring                                    *)
-  ZMQ_EVENT_HANDSHAKE_FAILED = $0800;
-  ZMQ_EVENT_HANDSHAKE_SUCCEED = $1000;
+(*  DRAFT Socket options.                                                     *)
+  ZMQ_ZAP_ENFORCE_DOMAIN = 93;
+  ZMQ_LOOPBACK_FASTPATH = 94;
+  ZMQ_METADATA = 95;
+  ZMQ_MULTICAST_LOOP = 96;
+  ZMQ_ROUTER_NOTIFY = 97;
 
 (*  DRAFT Context options                                                     *)
-  ZMQ_MSG_T_SIZE = 6;
+  ZMQ_ZERO_COPY_RECV = 10;
 
 (*  DRAFT Socket methods.                                                     *)
 function zmq_join(s: pointer; const group: pcchar): cint; cdecl; external LIB_ZMQ;
@@ -575,6 +648,17 @@ function zmq_msg_set_routing_id(msg: Pzmq_msg_t; routing_id: cuint32): cint; cde
 function zmq_msg_routing_id(msg: Pzmq_msg_t): cuint32; cdecl; external LIB_ZMQ;
 function zmq_msg_set_group(msg: Pzmq_msg_t; const group: pcchar): cint; cdecl; external LIB_ZMQ;
 function zmq_msg_group(msg: Pzmq_msg_t): pcchar; cdecl; external LIB_ZMQ;
+
+const
+(*  DRAFT Msg property names.                                                 *)
+  ZMQ_MSG_PROPERTY_ROUTING_ID = 'Routing-Id';
+  ZMQ_MSG_PROPERTY_SOCKET_TYPE = 'Socket-Type';
+  ZMQ_MSG_PROPERTY_USER_ID = 'User-Id';
+  ZMQ_MSG_PROPERTY_PEER_ADDRESS = 'Peer-Address';
+
+(*  Router notify options                                                     *)
+  ZMQ_NOTIFY_CONNECT = 1;
+  ZMQ_NOTIFY_DISCONNECT = 2;
 
 (******************************************************************************)
 (*  Poller polling on sockets,fd and thread-safe sockets                      *)
@@ -613,26 +697,9 @@ function zmq_poller_modify_fd(poller: pointer; fd: cint; events: cshort): cint; 
 function zmq_poller_remove_fd(poller: pointer; fd: cint): cint; cdecl; external LIB_ZMQ;
 {$endif}
 
-(******************************************************************************)
-(*  Scheduling timers                                                         *)
-(******************************************************************************)
-
-{$define ZMQ_HAVE_TIMERS}
-
-type
-  zmq_timer_fn = procedure (timer_id: cint; arg: pointer); cdecl;
-
-function zmq_timers_new(): pointer; cdecl; external LIB_ZMQ;
-function zmq_timers_destroy (timers_p: pointer): cint; cdecl; external LIB_ZMQ;
-function zmq_timers_add (timers: pointer; interval: csize_t; handler: zmq_timer_fn; arg: pointer): cint; cdecl; external LIB_ZMQ;
-function zmq_timers_cancel (timers: pointer; timer_id: cint): cint; cdecl; external LIB_ZMQ;
-function zmq_timers_set_interval (timers: pointer; timer_id: cint; interval: csize_t): cint; cdecl; external LIB_ZMQ;
-function zmq_timers_reset (timers: pointer; timer_id: cint): cint; cdecl; external LIB_ZMQ;
-function zmq_timers_timeout (timers: pointer): clong; cdecl; external LIB_ZMQ;
-function zmq_timers_execute (timers: pointer): cint; cdecl; external LIB_ZMQ;
+function zmq_socket_get_peer_state(socket: pointer; const routing_id: pointer; routing_id_size: csize_t): cint; cdecl; external LIB_ZMQ;
 
 {$endif} // ZMQ_BUILD_DRAFT_API
-
 
 // #undef ZMQ_EXPORT
 
